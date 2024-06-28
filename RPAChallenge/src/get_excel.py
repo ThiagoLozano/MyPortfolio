@@ -2,58 +2,65 @@ import Pyfunctions, Pyvars, lib
 from insert_info import insert_info
 
 def get_excel(*, driver:object):
-    
-    diretorio_download = Pyvars.diretorio_download
-    nome_planilha = Pyvars.nome_planilha
-    planilha = f"{diretorio_download}\{nome_planilha}"
-
     # ========================
     #  Baixa a planilha Excel
     # ========================
-    
+
     # Valida se o botão 'Download Excel' se encontra carregado na tela.
     xpath_btn_download = "/html/body/app-root/div[2]/app-rpa1/div/div[1]/div[6]/a"
-    
-    return_get_element_text = Pyfunctions.get_element_text(driver=driver, xpath_element=xpath_btn_download)
-    
-    Pyfunctions.log_message(level=return_get_element_text["level"], message=return_get_element_text["message"])
-    
-    if return_get_element_text["status"] == 0:
+
+    return_wait_element_text = Pyfunctions.wait_element_text(driver=driver, xpath_element=xpath_btn_download)
+
+    Pyfunctions.log_message(level=return_wait_element_text["level"], message=return_wait_element_text["message"])
+
+    if return_wait_element_text["status"] == 0:
+        driver.quit()
         return
-    
-    elif return_get_element_text["status"] not in [0, 1]:
-        Pyfunctions.log_message(level="error", message=f"[Pyfunctions][get_element_text()] - Retorno não mapeado ao tentar abrir o Chrome: {return_get_element_text}")
+
+    elif return_wait_element_text["status"] not in [0, 1]:
+        Pyfunctions.log_message(level="error", message=f"[Pyfunctions][wait_element_text()] - Retorno não mapeado ao tentar abrir o Chrome: {return_wait_element_text}")
+        driver.quit()
         return
-    
+
     # Clica no botão 'Download Excel'.
     return_click_element = Pyfunctions.click_element(driver=driver, xpath_element=xpath_btn_download)
-    
+
     Pyfunctions.log_message(level=return_click_element["level"], message=return_click_element["message"])
-    
+
     if return_click_element["status"] == 0:
+        driver.quit()
         return
-    
+
     elif return_click_element["status"] not in [0, 1]:
-        Pyfunctions.log_message(level="error", message=f"[Pyfunctions][get_element_text()] - Retorno não mapeado ao tentar abrir o Chrome: {return_click_element}")
+        Pyfunctions.log_message(level="error", message=f"[Pyfunctions][wait_element_text()] - Retorno não mapeado ao tentar abrir o Chrome: {return_click_element}")
+        driver.quit()
         return
     
+    lib.time.sleep(3) # Tempo de finalizar o download.
+
     # =========================
     #  Valida a planilha Excel
     # =========================
-    
+
     diretorio_download = Pyvars.diretorio_download
-    nome_planilha = Pyvars.nome_planilha
-    planilha = f"{diretorio_download}\{nome_planilha}"
+    
+    if diretorio_download == "":
+        diretorio_download = str(lib.Path.home()) + "\Downloads"
+    
+    name_sheet = Pyvars.name_sheet
+    planilha = f"{diretorio_download}\{name_sheet}"
     
     return_validate_sheet = validate_sheet(path_sheet=planilha)
     
     Pyfunctions.log_message(level=return_validate_sheet["level"], message=return_validate_sheet["message"])
     
     if return_validate_sheet["status"] == 0:
+        driver.quit()
         return
     
     elif return_validate_sheet["status"] not in [0, 1]:
         Pyfunctions.log_message(level="error", message=f"[get_excel][validate_sheet()] - Retorno não mapeado ao tentar validar a planilha de entrada: {return_validate_sheet}")
+        driver.quit()
         return
     
     # ===============
@@ -80,7 +87,6 @@ def validate_sheet(*, path_sheet:str) -> dict[int, str, str, None]:
                 - Mensagem de status (para acompanhar informação de retorno);
                 - Objeto de retorno;
     """
-    
     # ---- Valida parâmetro ----- #
     if not isinstance(path_sheet, str):
         return {"status": 0,

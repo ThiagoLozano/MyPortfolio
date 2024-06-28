@@ -1,5 +1,4 @@
-import lib
-import Pyvars
+import lib, Pyvars
 
 # def log_message()
 def log_message(path_dir_logs:str=Pyvars.diretorio_logs, *, level:str, message:str) -> str:
@@ -14,9 +13,13 @@ def log_message(path_dir_logs:str=Pyvars.diretorio_logs, *, level:str, message:s
         [Returns]
             Sem retorno
     """
+    
     # Valida se o diretório de LOG existe.
-    lib.os.makedirs(lib.os.path.dirname(path_dir_logs), exist_ok=True)
-
+    try:
+        lib.os.makedirs(path_dir_logs, exist_ok=True)
+    except FileNotFoundError as error:
+        print(f"[Pyfunctions][log_message()] - {error}")
+    
     # Define o nome e caminho do arquivo de log.
     data_atual = lib.datetime.now().strftime("%d_%m_%Y")
     log_file_name = f"{data_atual}.log"
@@ -40,7 +43,7 @@ def log_message(path_dir_logs:str=Pyvars.diretorio_logs, *, level:str, message:s
         raise ValueError(f"Nível de log desconhecido: {level}")
 
 # def config_chrome()
-def config_chrome(*, dir_download:str) -> dict[int, str, str, None]:
+def config_chrome(dir_download:str="") -> dict[int, str, str, None]:
     """
         - Configura o webdriver com as opções desejadas.
 
@@ -54,7 +57,6 @@ def config_chrome(*, dir_download:str) -> dict[int, str, str, None]:
                 - Mensagem de status (para acompanhar informação de retorno);
                 - Objeto de retorno;
     """
-
     # ----- Valida parâmetro ----- #
     if not isinstance(dir_download, str):
         return {"status": 0,
@@ -63,7 +65,7 @@ def config_chrome(*, dir_download:str) -> dict[int, str, str, None]:
                 "payload": None}
     
     # ----- Valida diretório ----- #
-    if not lib.os.path.exists(dir_download) or not lib.os.path.isdir(dir_download):
+    if dir_download != "" and not lib.os.path.isdir(dir_download):
         return {"status":  0,
                 "level": "error",
                 "message": f"[Pyfunctions][config_chrome()] - O diretório '{dir_download}' não existe ou não foi localizado com sucesso." , 
@@ -96,7 +98,6 @@ def open_chrome(*, url:str, options:object) -> dict[int, str, str, None]:
                 - Mensagem de status (para acompanhar informação de retorno);
                 - Objeto de retorno;
     """
-    
     # ----- Valida parâmetro ----- #
     if not isinstance(url, str):
         return {"status": 0,
@@ -125,8 +126,8 @@ def open_chrome(*, url:str, options:object) -> dict[int, str, str, None]:
             "message": "[Pyfunctions][open_chrome()] - Chrome aberto com sucesso." , 
             "payload": driver}
 
-# def get_element_text()
-def get_element_text(timeout:int=30, *, driver:object, xpath_element:str) -> dict[int, str, str, None]:
+# def wait_element_text()
+def wait_element_text(timeout:int=30, *, driver:object, xpath_element:str) -> dict[int, str, str, None]:
     """
         - Busca um elemento XPATH na página para validar se está na página correta e se a mesma está carregada.
 
@@ -142,24 +143,23 @@ def get_element_text(timeout:int=30, *, driver:object, xpath_element:str) -> dic
                 - Mensagem de status (para acompanhar informação de retorno);
                 - Objeto de retorno;
     """
-    
     # ----- Valida parâmetro ---- #
     if not isinstance(timeout, int):
         return {"status": 0,
                 "level": "error",
-                "message":"[Pyfunctions][get_element_text()] - O parâmetro de entrada 'timeout' está incorreto.", 
+                "message":"[Pyfunctions][wait_element_text()] - O parâmetro de entrada 'timeout' está incorreto.", 
                 "payload": None}
     
     if not isinstance(driver, object):
         return {"status": 0,
                 "level": "error",
-                "message":"[Pyfunctions][get_element_text()] - O parâmetro de entrada 'driver' está incorreto.", 
+                "message":"[Pyfunctions][wait_element_text()] - O parâmetro de entrada 'driver' está incorreto.", 
                 "payload": None}
     
     if not isinstance(xpath_element, str):
         return {"status": 0,
                 "level": "error",
-                "message":"[Pyfunctions][get_element_text()] - O parâmetro de entrada 'xpath_element' está incorreto.", 
+                "message":"[Pyfunctions][wait_element_text()] - O parâmetro de entrada 'xpath_element' está incorreto.", 
                 "payload": None}
     
     # ----- Busca o elemento na tela ----- #
@@ -170,17 +170,17 @@ def get_element_text(timeout:int=30, *, driver:object, xpath_element:str) -> dic
             driver.find_element(by=lib.By.XPATH, value=xpath_element)
             return {"status": 1,
                     "level": "info",
-                    "message": f"[Pyfunctions][get_element_text()] - Elemento texto '{xpath_element}' localizado com sucesso.", 
+                    "message": f"[Pyfunctions][wait_element_text()] - Elemento texto '{xpath_element}' localizado com sucesso.", 
                     "payload": None}
         
         except Exception:
-            lib.time.sleep(5)
+            lib.time.sleep(3) # Tempo para ele esperar uma proxima tentativa (evitar travamento).
             clock += 1
             continue
-    
+
     return {"status": 0,
             "level": "error",
-            "message": f"[Pyfunctions][get_element_text()] - Timeout ao buscar elemento '{xpath_element}' na tela.", 
+            "message": f"[Pyfunctions][wait_element_text()] - Timeout ao buscar elemento '{xpath_element}' na tela.", 
             "payload": None}
 
 # def click_element()
@@ -199,7 +199,6 @@ def click_element(driver:object, xpath_element:str) -> dict[int, str, str, None]
                 - Mensagem de status (para acompanhar informação de retorno);
                 - Objeto de retorno;
     """
-
     # ----- Valida parâmetro ---- #
     if not isinstance(driver, object):
         return {"status": 0,
@@ -246,7 +245,6 @@ def insert_element(*, driver:object, xpath_element:str, text:str) -> dict[int, s
                 - Mensagem de status (para acompanhar informação de retorno);
                 - Objeto de retorno;
     """
-    
     # ----- Valida parâmetro ---- #
     if not isinstance(driver, object):
         return {"status": 0,
@@ -281,3 +279,61 @@ def insert_element(*, driver:object, xpath_element:str, text:str) -> dict[int, s
                 "level": "error",
                 "message": f"[Pyfunctions][insert_element()] - Problema ao tentar preencher o elemento '{xpath_element}': {error}", 
                 "payload": None}
+
+# def get_element_text()
+def get_element_text(timeout:int=30, *, driver:object, xpath_element:str) -> dict[int, str, str, None]:
+    """
+        - Extrai o texto da tela.
+
+        [Args]
+            timeout (int): Tempo que a função terá para extrair o texto que existe na tela.
+            driver (str): Configurações de conexão do Chrome;
+            xpath_element (str): Elemento que deve ser buscado na tela;
+ 
+        [Returns]
+            Dict{int, str, str, opcional}:
+                - Código de status (0 = ERRO / 1 = SUCESSO);
+                - Nível da mensagem (debug, info, warning, error, critical)
+                - Mensagem de status (para acompanhar informação de retorno);
+                - Objeto de retorno;
+    """
+    # ----- Valida parâmetro ---- #
+    if not isinstance(timeout, int):
+        return {"status": 0,
+                "level": "error",
+                "message":"[Pyfunctions][wait_element_text()] - O parâmetro de entrada 'timeout' está incorreto.", 
+                "payload": None}
+    
+    if not isinstance(driver, object):
+        return {"status": 0,
+                "level": "error",
+                "message":"[Pyfunctions][wait_element_text()] - O parâmetro de entrada 'driver' está incorreto.", 
+                "payload": None}
+    
+    if not isinstance(xpath_element, str):
+        return {"status": 0,
+                "level": "error",
+                "message":"[Pyfunctions][wait_element_text()] - O parâmetro de entrada 'xpath_element' está incorreto.", 
+                "payload": None}
+    
+    # ----- Extrai o valor do elemento na tela ----- #
+    clock = 0
+    
+    while clock != timeout:
+        try:
+            element = driver.find_element(by=lib.By.XPATH, value=xpath_element)
+            text = element.text
+            return {"status": 1,
+                    "level": "info",
+                    "message": f"[Pyfunctions][wait_element_text()] - Elemento texto '{xpath_element}' extraido com sucesso.", 
+                    "payload": text}
+        
+        except Exception:
+            lib.time.sleep(5)
+            clock += 1
+            continue
+    
+    return {"status": 0,
+            "level": "error",
+            "message": f"[Pyfunctions][wait_element_text()] - Timeout ao buscar texto do elemento '{xpath_element}' na tela.", 
+            "payload": None}

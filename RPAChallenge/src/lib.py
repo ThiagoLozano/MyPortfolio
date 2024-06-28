@@ -1,11 +1,11 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait, Select
-from selenium.webdriver.support import expected_conditions as EC
-from datetime import datetime
-import pandas as pd
-import logging
-import json
-import time
-import os
+from selenium import webdriver  # Controla o navegador para automação
+from selenium.webdriver.common.by import By  # Localiza elementos na página da web
+from selenium.webdriver.chrome.options import Options  # Configura o comportamento do navegador Chrome
+from datetime import datetime  # Trabalha com datas e horas
+from pathlib import Path  # Manipulação de caminhos de arquivos
+import pandas as pd  # Cria e analisa estruturas de dados
+import logging  # Registra mensagens para depuração e monitoramento
+import json  # Codifica e decodifica objetos JSON
+import time  # Controla o fluxo de execução do programa com pausas
+import os  # Interage com diretórios e arquivos
+import pytest # Realiza testes unitários

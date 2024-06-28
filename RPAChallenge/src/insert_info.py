@@ -2,8 +2,13 @@ import Pyfunctions, Pyvars, lib
 
 def insert_info(*, driver:object):
     diretorio_download = Pyvars.diretorio_download
-    nome_planilha = Pyvars.nome_planilha
-    df = lib.pd.read_excel(f"{diretorio_download}\{nome_planilha}")
+    
+    if diretorio_download == "":
+        diretorio_download = str(lib.Path.home()) + "\Downloads"
+
+    name_sheet = Pyvars.name_sheet
+
+    df = lib.pd.read_excel(f"{diretorio_download}\{name_sheet}")
     
     XPATHS= {
         "xpath_start": "/html/body/app-root/div[2]/app-rpa1/div/div[1]/div[6]/button",
@@ -23,10 +28,12 @@ def insert_info(*, driver:object):
     Pyfunctions.log_message(level=return_click_element["level"], message=return_click_element["message"])
     
     if return_click_element["status"] == 0:
+        driver.quit()
         return
     
     elif return_click_element["status"] not in [0, 1]:
         Pyfunctions.log_message(level="error", message=f"[insert_info][click_element()] - Retorno não mapeado ao tentar clicar no elemento: {XPATHS['xpath_start']} - {return_click_element}")
+        driver.quit()
         return
 
     # Preenche os campos do formulário.
@@ -50,10 +57,12 @@ def insert_info(*, driver:object):
                 Pyfunctions.log_message(level=return_insert_element["level"], message=return_insert_element["message"])
                 
                 if return_insert_element["status"] == 0:
+                    driver.quit()
                     return
                 
                 elif return_insert_element["status"] not in [0, 1]:
                     Pyfunctions.log_message(level="error", message=f"[Pyfunctions][insert_element()] - Retorno não mapeado ao tentar preencher elemento texto: {return_insert_element}")
+                    driver.quit()
                     return
 
             # Clica no botão 'Submit'.
@@ -62,15 +71,40 @@ def insert_info(*, driver:object):
             Pyfunctions.log_message(level=return_click_element["level"], message=return_click_element["message"])
 
             if return_click_element["status"] == 0:
+                driver.quit()
                 return
             
             elif return_click_element["status"] not in [0, 1]:
                 Pyfunctions.log_message(level="error", message=f"[insert_info][click_element()] - Retorno não mapeado ao tentar clicar no elemento: {XPATHS['xpath_submit']} - {return_click_element}")
+                driver.quit()
                 return
 
     except Exception as error:
         Pyfunctions.log_message(level="error", message=f"[insert_info] - Problema ao tentar preencher o formulário: {error}")
+        driver.quit()
         return
+    
+    # =====================================
+    #  Salva a mensagem de retorno do site
+    # =====================================
+
+    xpath_message = "/html/body/app-root/div[2]/app-rpa1/div/div[2]/div[2]"
+    
+    get_element_text = Pyfunctions.get_element_text(driver=driver, xpath_element=xpath_message)
+    
+    Pyfunctions.log_message(level=return_click_element["level"], message=return_click_element["message"])
+    
+    if return_click_element["status"] == 0:
+        driver.quit()
+        return
+    
+    elif return_click_element["status"] not in [0, 1]:
+        Pyfunctions.log_message(level="error", message=f"[insert_info][click_element()] - Retorno não mapeado ao tentar clicar no elemento: {XPATHS['xpath_start']} - {return_click_element}")
+        driver.quit()
+        return
+    
+    text = f"Mensagem de retorno final: {get_element_text['payload']}"
+    Pyfunctions.log_message(level="info", message=text)
 
     # ===============
     #  Fim do Módulo
@@ -78,8 +112,7 @@ def insert_info(*, driver:object):
 
     Pyfunctions.log_message(level="info", message="[insert_info] - Módulo finalizado com sucesso.")
     
-    lib.time.sleep(3)
-    driver.close()
+    driver.quit()
 
 if __name__ == "__main__":
     insert_info(driver="")

@@ -3,25 +3,29 @@ from get_excel import get_excel
 from insert_info import insert_info
 
 def main():
-    # ===========================
-    #  Valida a pasta de entrada
-    # ===========================
+    # ======================================
+    #  Valida os diretórios de Excel e JSON
+    # ======================================
 
+    name_sheet = Pyvars.name_sheet
+    name_json = Pyvars.name_json
     diretorio_download = Pyvars.diretorio_download
     diretorio_json = Pyvars.diretorio_json
-    nome_planilha = Pyvars.nome_planilha
+    
+    if diretorio_download == "":
+        diretorio_download = str(lib.Path.home()) + "\Downloads"
 
-    return_clean_folder = clean_folder(path_sheet=diretorio_download, path_json_status=diretorio_json, nome_planilha=nome_planilha)
+    return_validate_folders= validate_folders(path_sheet=diretorio_download, path_json=diretorio_json, name_sheet=name_sheet, name_json=name_json)
+
+    Pyfunctions.log_message(level=return_validate_folders["level"], message=return_validate_folders["message"])
     
-    Pyfunctions.log_message(level=return_clean_folder["level"], message=return_clean_folder["message"])
-    
-    if return_clean_folder["status"] == 0:
+    if return_validate_folders["status"] == 0:
         return
     
-    elif return_clean_folder["status"] not in [0, 1]:
-        Pyfunctions.log_message(level="error", message=f"[main][clean_folder()] - Retorno não mapeado ao tentar abrir o Chrome: {return_clean_folder}")
+    elif return_validate_folders["status"] not in [0, 1]:
+        Pyfunctions.log_message(level="error", message=f"[main][validate_folders()] - Retorno não mapeado ao tentar abrir o Chrome: {return_validate_folders}")
         return
-    
+
     # =============================
     #  Configura o ambiente Chrome
     # =============================
@@ -50,10 +54,12 @@ def main():
     Pyfunctions.log_message(level=return_open_chrome["level"], message=return_open_chrome["message"])
     
     if return_open_chrome["status"] == 0:
+        return_open_chrome.quit()
         return
 
     elif return_open_chrome["status"] not in [0, 1]:
         Pyfunctions.log_message(level="error", message=f"[Pyfunctions][open_chrome()] - Retorno não mapeado ao tentar abrir o Chrome: {return_open_chrome}")
+        return_open_chrome.quit()
         return
     
     driver = return_open_chrome["payload"]
@@ -64,10 +70,10 @@ def main():
 
     Pyfunctions.log_message(level="info", message="[main] - Módulo finalizado com sucesso.")
    
-    # Valida se planilha já foi baixada na máquina antes.
-    diretorio_json = Pyvars.diretorio_json
+    full_path_json = lib.os.path.join(diretorio_json, name_json)
 
-    with open(diretorio_json, 'r') as arquivo_json:
+    # Verifica se planilha já foi baixada na máquina antes.
+    with open(full_path_json, 'r') as arquivo_json:
         dados = lib.json.load(arquivo_json)
     
     baixar_nova_planilha = dados["baixar_nova_planilha"]
@@ -76,9 +82,9 @@ def main():
         get_excel(driver=driver)
     else:
         insert_info(driver=driver)
-
-# def clean_folder()
-def clean_folder(*, path_sheet:str, path_json_status:str, nome_planilha:str) -> dict[int, str, str, None]:
+    
+# def validate_folders()
+def validate_folders(*, path_sheet:str, path_json:str, name_sheet:str, name_json:str) -> dict[int, str, str, None]:
     """
         - Cria a pasta de entrada caso ela não exista ou tenha sido apagada;
         - Limpa os arquivos indesejados da pasta de entrada;
@@ -86,8 +92,9 @@ def clean_folder(*, path_sheet:str, path_json_status:str, nome_planilha:str) -> 
 
         [Args]
             path_sheet (str): Caminho onde deve ser armazenado a planilha de entrada;
-            path_json_status (str): Caminho onde deve ficar o JSON informando se a planilha deve ou não ser extraida;
-            nome_planilha (str): Nome padrão que a planilha é entregue (nome_planilha.xlsx);
+            path_json (str): Caminho onde deve ficar o JSON informando se a planilha deve ou não ser extraida;
+            name_sheet (str): Nome padrão que a planilha é entregue (nome_planilha.xlsx);
+            name_json (str): Nome padrão do arquivo JSON;
  
         [Returns]
             Dict{int, str, str, opcional}:
@@ -104,7 +111,7 @@ def clean_folder(*, path_sheet:str, path_json_status:str, nome_planilha:str) -> 
                 "message":"[main][clean_folder()] - O parâmetro de entrada 'path_sheet' está incorreto.", 
                 "payload": None}
 
-    if not isinstance(path_json_status, str):
+    if not isinstance(path_json, str):
         return {"status": 0,
                 "level": "error",
                 "message":"[main][clean_folder()] - O parâmetro de entrada 'path_json_status' está incorreto.", 
@@ -118,34 +125,56 @@ def clean_folder(*, path_sheet:str, path_json_status:str, nome_planilha:str) -> 
                 "level": "error",
                 "message": f"[main][clean_folder()] - Problema ao tentar criar a pasta de entrada: {error}", 
                 "payload": None}
-        
-    # ----- Limpa arquivos indesejados na pasta de entrada ----- #
-    for arquivo in lib.os.listdir(path_sheet):
-        caminho_arquivo = lib.os.path.join(path_sheet, arquivo)
-        
-        if arquivo == nome_planilha:
-            continue
-        
-        lib.os.remove(caminho_arquivo)
+    
+    # ----- Cria a pasta que deve receber o status de extração da planilha ----- #
 
-    # ----- Valida se a planilha de entrada existe na máquina ----- #
-    if lib.os.listdir(path_sheet) == []:
-        with open(path_json_status, 'r') as arquivo_json:
+    try:
+        lib.os.makedirs(path_json, exist_ok=True)
+    except Exception as error:
+        return {"status": 0,
+                "level": "error",
+                "message": f"[main][clean_folder()] - Problema ao tentar criar a pasta de entrada: {error}", 
+                "payload": None}
+    
+    # ----- Cria o arquivo JSON caso ele não exista ----- #
+
+    full_path_json = lib.os.path.join(path_json, name_json)
+    
+    if not lib.os.path.exists(full_path_json):
+        
+        data = {
+            "baixar_nova_planilha": ""
+        }
+    
+        with open(full_path_json, 'w') as arquivo:
+            lib.json.dump(data, arquivo, indent=4)
+
+    # ----- Valida se a planilha precisa ser baixada ou não ----- #
+    try:
+    
+        with open(full_path_json, 'r') as arquivo_json:
             dados = lib.json.load(arquivo_json)
+
+        dados['baixar_nova_planilha'] = True if not name_sheet in lib.os.listdir(path_sheet) else False
         
-        dados['baixar_nova_planilha'] = True
-        
-        with open(path_json_status, 'w') as arquivo_json:
+        with open(full_path_json, 'w') as arquivo_json:
             lib.json.dump(dados, arquivo_json, indent=4)
     
-    else:
-        with open(path_json_status, 'r') as arquivo_json:
-            dados = lib.json.load(arquivo_json)
-        
-        dados['baixar_nova_planilha'] = False
-        
-        with open(path_json_status, 'w') as arquivo_json:
-            lib.json.dump(dados, arquivo_json, indent=4)
+    except FileNotFoundError as error:
+        return {"status": 0,
+                "level": "error",
+                "message": f"[main][clean_folder()] - Arquivo não localizado na máquina: {error}", 
+                "payload": None}
+    except lib.json.JSONDecodeError as error:
+        return {"status": 0,
+                "level": "error",
+                "message": f"[main][clean_folder()] - Arquivo JSON inválido: {error}", 
+                "payload": None}
+    except Exception as error:
+        return {"status": 0,
+                "level": "error",
+                "message": f"[main][clean_folder()] - Problema ao validar download da planilha: {error}", 
+                "payload": None}
     
     return {"status": 1,
             "level": "info",
