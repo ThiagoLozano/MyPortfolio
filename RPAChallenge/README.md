@@ -11,8 +11,8 @@ O projeto tem como objetivo automatizar o preenchimento de fomulário através d
 - [Ferramentas](#ferramentas)
 - [Sistemas](#sistemas)
 - [Instalação](#instalação)
-- [Usabilidade](#usabilidade)
 - [ChromeDriver](#chromedriver)
+- [Usabilidade](#usabilidade)
 
 ## Visão Geral
 
