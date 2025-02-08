@@ -8,7 +8,7 @@ This portfolio showcases various automation scripts using Python and Selenium.
 
 ### Projects
 
-#### 1. RPA Challenge
+#### [1. RPA Challenge](https://github.com/ThiagoLozano/MyPortfolio/tree/main/rpa_challenge)
 
 Automation scripts for the RPA Challenge, focusing on downloading files, filling web forms, and processing Excel data ([RPA Challenge](https://rpachallenge.com/)).
 
